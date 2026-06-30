@@ -47,6 +47,7 @@ This article covers common issues Nimbus users encounter and the steps to resolv
    - Free: 100 runs/month
    - Pro: 1,000 runs/month
    - Business: 10,000 runs/month
+   - Enterprise: Custom/advanced limits
 4. Review the **Run history** tab in the rule editor to see whether recent triggers were detected and what happened.
 
 ## File Upload Fails

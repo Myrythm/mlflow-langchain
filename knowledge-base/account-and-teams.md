@@ -74,7 +74,7 @@ Workspace Owners and Admins can configure:
 - **Workspace name and logo** — via **Settings → General**.
 - **Default member role** for new invites — via **Settings → Members → Settings**.
 - **2FA enforcement** — require all members to use 2FA (**Settings → Security**, available on Business and Enterprise).
-- **SSO** — configure Google, Microsoft, or SAML SSO (**Settings → Security → Single Sign-On**, Business and Enterprise).
+- **SSO** — configure Google and Microsoft SSO (**Settings → Security → Single Sign-On**, Business and Enterprise); SAML SSO with SCIM is Enterprise-only.
 
 ## Deleting a Workspace
 

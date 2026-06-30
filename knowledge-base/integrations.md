@@ -5,7 +5,7 @@ category: integrations
 
 # Integrations
 
-Nimbus connects with the tools your team already uses. All integrations are available on the Pro, Business, and Enterprise plans and are configured via **Settings → Integrations** using OAuth.
+Nimbus connects with the tools your team already uses. All integrations are available on the Pro, Business, and Enterprise plans. Most integrations are configured via **Settings → Integrations** using OAuth; Zapier uses an API key instead.
 
 ## Available Integrations
 

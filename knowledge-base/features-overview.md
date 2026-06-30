@@ -69,7 +69,7 @@ Attach files directly to task cards. Supported formats include images, PDFs, doc
 | Free       | —                 |
 | Pro        | 250 MB per file   |
 | Business   | 5 GB per file     |
-| Enterprise | 5 GB per file     |
+| Enterprise | Custom            |
 
 ## Integrations
 
