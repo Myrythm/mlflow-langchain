@@ -1,0 +1,16 @@
+
+.env
+.venv/
+.claude/
+data/
+
+# Python
+__pycache__/
+*.pyc
+
+# MLflow tracking artifacts (generated locally)
+mlflow.db
+mlartifacts/
+
+# Subagent-driven-development scratch
+.superpowers/
