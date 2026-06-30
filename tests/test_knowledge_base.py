@@ -1,5 +1,3 @@
-import importlib
-
 from support_rag import config, knowledge_base
 
 
@@ -12,6 +10,7 @@ def test_build_documents_reads_frontmatter_and_chunks(tmp_path, monkeypatch):
               "The Pro plan costs $12 per member per month.")
     monkeypatch.setattr(config, "KB_DIR", tmp_path)
     knowledge_base.build_documents.cache_clear()
+    knowledge_base._doc_map.cache_clear()
 
     docs = knowledge_base.build_documents()
 
