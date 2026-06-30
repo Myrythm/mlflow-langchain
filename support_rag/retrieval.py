@@ -1,7 +1,7 @@
 """Configurable retriever: dense / sparse / hybrid.
 
 - dense  -> Chroma (OpenAI embeddings) similarity search
-- sparse -> fastembed BM25 / SPLADE scored in-process (dot product over sparse vectors)
+- sparse -> fastembed BM25 scored in-process (dot product over sparse vectors)
 - hybrid -> Reciprocal Rank Fusion of the dense and sparse rankings
 
 A `langchain_core` BaseRetriever subclass, so `mlflow.langchain.autolog()` traces it as a
