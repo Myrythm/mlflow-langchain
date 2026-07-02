@@ -105,6 +105,32 @@ describe("useChat.send", () => {
     const payload = streamChat.mock.calls[1][0];
     expect(payload.history).toEqual([{ role: "user", content: "hello" }]);
   });
+
+  it("ignores send while a request is already in flight", async () => {
+    let release;
+    streamChat.mockImplementation(
+      (payload, cb) =>
+        new Promise((resolve) => {
+          release = () => {
+            cb.onSources(SOURCES);
+            cb.onDone();
+            resolve();
+          };
+        }),
+    );
+    const chat = useChat();
+    chat.draft.value = "first";
+    const inFlight = chat.send(SETTINGS);
+
+    chat.draft.value = "second";
+    await chat.send(SETTINGS); // must no-op: stage is not idle
+
+    expect(streamChat).toHaveBeenCalledTimes(1);
+    expect(chat.messages.value).toHaveLength(2); // only the first turn's pair
+    release();
+    await inFlight;
+    expect(chat.stage.value).toBe("idle");
+  });
 });
 
 describe("stage + sources selection", () => {
@@ -122,6 +148,18 @@ describe("stage + sources selection", () => {
     await chat.send(SETTINGS);
 
     expect(seen).toEqual(["retrieving", "generating"]);
+    expect(chat.stage.value).toBe("idle");
+  });
+
+  it("returns to idle when the stream ends without done or error", async () => {
+    streamChat.mockImplementation(async (payload, cb) => {
+      cb.onSources(SOURCES); // stage -> generating, then the stream just ends
+    });
+    const chat = useChat();
+    chat.draft.value = "q";
+
+    await chat.send(SETTINGS);
+
     expect(chat.stage.value).toBe("idle");
   });
 
