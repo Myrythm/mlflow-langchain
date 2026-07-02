@@ -36,7 +36,8 @@ mlflow-llm/
 ```
 
 Deleted: `app.py`, `support_rag/ui.py`, the `gradio` dependency.
-New Python dependencies: `fastapi`, `uvicorn`, `sse-starlette`.
+New Python dependencies: `fastapi`, `uvicorn` (plus `httpx` as a dev dependency for
+FastAPI's `TestClient`).
 Updated docs: `CLAUDE.md`, root `README.md`, plus short `backend/README.md` and
 `frontend/README.md`.
 
@@ -69,7 +70,9 @@ class ChatRequest(BaseModel):
     k: int = config.DEFAULT_K        # ge=1, le=8
 ```
 
-Response: `sse-starlette.EventSourceResponse` emitting, in order:
+Response: `text/event-stream` (Server-Sent Events) via Starlette's `StreamingResponse`,
+with the SSE wire format produced by a small helper — no extra dependency. Events, in
+order:
 
 1. `event: sources` — JSON array of `{title, category, snippet}` from the retrieved
    documents, sent **before the first token** (retrieval completes first in
