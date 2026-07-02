@@ -23,8 +23,14 @@ uv run python build_kb.py
 # Run the default (hybrid) agent once, traced to MLflow
 uv run python main.py
 
-# Gradio chat UI with a retrieval-strategy selector (dense/sparse/hybrid + top-k)
-uv run python app.py   # http://127.0.0.1:7860
+# Backend REST API (FastAPI) — http://127.0.0.1:8000, OpenAPI docs at /docs
+uv run uvicorn backend.main:app --port 8000
+
+# Frontend dev server (Vue 3 + Vite) — http://localhost:5173, proxies /api to :8000
+cd frontend && npm install && npm run dev
+
+# Frontend unit tests (SSE parser + chat composable)
+cd frontend && npm test
 
 # Evaluate the default agent (hybrid + BM25) against the 16-question eval set
 uv run python run_eval.py 2     # smoke-test on first 2 questions
@@ -45,7 +51,8 @@ uv run ruff check --fix .
 ```
 
 `OPENAI_API_KEY` must be set in `.env` (copy from `.env.example`). The MLflow server must be
-running before `main.py`, `app.py`, `run_eval.py`, or `compare_retrievers.py` will work —
+running before `main.py`, the backend (`backend.main:app`), `run_eval.py`, or
+`compare_retrievers.py` will work —
 they all call `setup_tracing()`, which points at `http://127.0.0.1:5000`.
 
 ## Architecture
@@ -80,8 +87,11 @@ over it.
 - `tracing.py` — `setup_tracing()`: sets the MLflow tracking URI/experiment
   (`customer-support-rag`) and enables `mlflow.langchain.autolog()`. Call this before touching
   the agent, retriever, or eval in any new script.
-- `ui.py` — `build_demo()`, the Gradio chat interface used by `app.py`.
+- The web UI lives outside the package: `backend/` is a thin FastAPI wrapper
+  (`/api/config`, `/api/health`, and `POST /api/chat` streaming SSE:
+  `sources` → `token`… → `done`), and `frontend/` is a separate Vue 3 + Vite +
+  Tailwind SPA that consumes it. Neither contains retrieval/generation logic.
 
 When changing retrieval or chunking behavior, `build_kb.py` must be re-run to rebuild the
 Chroma collection and BM25 cache under `data/` before the change takes effect in `main.py`,
-`app.py`, or eval scripts.
+the backend, or eval scripts.

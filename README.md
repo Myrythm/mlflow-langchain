@@ -53,17 +53,23 @@ uv run python main.py
 
 Open http://127.0.0.1:5000 → **customer-support-rag** → **Traces**.
 
-## Chat UI (Gradio)
+## Web UI (FastAPI + Vue)
 
-A chat interface with a retrieval-strategy selector (dense / sparse / hybrid + top-k) and a
-live panel of the retrieved knowledge-base articles:
+A streaming chat interface with a retrieval-strategy selector (dense / sparse / hybrid +
+top-k) and a live panel of the retrieved knowledge-base passages. Two processes:
 
 ```bash
-uv run python app.py
+# Backend (FastAPI) — http://127.0.0.1:8000, OpenAPI docs at /docs
+uv run uvicorn backend.main:app --port 8000
+
+# Frontend (Vue 3 + Vite) — http://localhost:5173
+cd frontend
+npm install
+npm run dev
 ```
 
-Opens at http://127.0.0.1:7860. Each turn is traced into the `customer-support-rag`
-experiment.
+Each turn is traced into the `customer-support-rag` experiment. Answers stream over
+Server-Sent Events (`sources` → `token`… → `done`).
 
 ## Compare retrieval strategies
 
@@ -122,11 +128,11 @@ support_rag/
   generation.py       # RAG chain: build_answer_fn() / default_retriever() / get_default_answer()
   eval_dataset.py     # hand-written questions with expected facts + source docs
   evaluation.py       # build_scorers() / evaluate_config() / compare_configs()
-  ui.py               # Gradio chat interface (build_demo())
 
 build_kb.py            # CLI: build the dense + sparse indexes
 main.py                # CLI: demo the default (hybrid) agent
-app.py                 # CLI: launch the Gradio chat UI
+backend/               # FastAPI wrapper: /api/config, /api/health, /api/chat (SSE)
+frontend/              # Vue 3 + Vite + Tailwind chat UI (see frontend/README.md)
 run_eval.py            # CLI: evaluate the default agent
 compare_retrievers.py  # CLI: benchmark dense / BM25 / hybrid
 
