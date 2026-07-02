@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import "@fontsource/ibm-plex-sans/400.css";
+@import "@fontsource/ibm-plex-sans/500.css";
+@import "@fontsource/ibm-plex-sans/600.css";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+
+@theme {
+  --color-paper: #fafaf7;
+  --color-ink: #1a1a17;
+  --color-accent: #e5581b;
+  --color-line: #e3e1da;
+  --color-muted: #6e6b62;
+  --font-sans: "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  @apply bg-paper font-sans text-ink antialiased;
+}
+
+/* Markdown answers (rendered via marked + DOMPurify into .answer) */
+.answer :is(p, ul, ol) {
+  @apply my-2 leading-relaxed;
+}
+.answer ol {
+  @apply list-decimal pl-5;
+}
+.answer ul {
+  @apply list-disc pl-5;
+}
+.answer code {
+  @apply rounded-sm bg-ink/5 px-1 py-0.5 font-mono text-[13px];
+}
+.answer a {
+  @apply text-accent underline;
+}
+
+/* Orange block cursor at the streaming text edge */
+.answer.streaming > :last-child::after {
+  content: "▍";
+  @apply text-accent;
+}

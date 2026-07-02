@@ -17,3 +17,7 @@ mlartifacts/
 
 # Codebase reviews by Fable
 review.md
+
+# Frontend (Node)
+node_modules/
+frontend/dist/

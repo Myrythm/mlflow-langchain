@@ -1,0 +1,26 @@
+{
+  "name": "nimbus-support-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.2.5",
+    "@fontsource/ibm-plex-sans": "^5.2.5",
+    "dompurify": "^3.2.4",
+    "marked": "^15.0.7",
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.3",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "tailwindcss": "^4.1.3",
+    "vite": "^6.2.0",
+    "vitest": "^3.1.1"
+  }
+}
