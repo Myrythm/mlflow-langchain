@@ -4,11 +4,11 @@
     uv run python run_eval.py 2      # smoke-test on the first 2 rows
 """
 
-import sys
+import argparse
 
 import mlflow
 
-from support_rag.config import EXPERIMENT
+from support_rag.config import EXPERIMENT, TRACKING_URI
 from support_rag.eval_dataset import EVAL_DATASET
 from support_rag.evaluation import evaluate_config
 from support_rag.generation import default_retriever
@@ -29,10 +29,20 @@ def main(limit: int | None = None) -> None:
     run_id = getattr(result, "run_id", None)
     exp = mlflow.get_experiment_by_name(EXPERIMENT)
     if run_id and exp:
-        print(
-            f"\nEval run: http://127.0.0.1:5000/#/experiments/{exp.experiment_id}/runs/{run_id}"
-        )
+        print(f"\nEval run: {TRACKING_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}")
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "limit",
+        nargs="?",
+        type=int,
+        default=None,
+        help="evaluate only the first N questions (default: full eval set)",
+    )
+    return parser.parse_args(argv)
 
 
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else None)
+    main(parse_args().limit)

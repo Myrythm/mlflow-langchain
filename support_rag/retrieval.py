@@ -32,8 +32,12 @@ class HybridRetriever(BaseRetriever):
     weights: tuple[float, float] = config.HYBRID_WEIGHTS
 
     def _dense_ranking(self, query: str) -> list[str]:
-        result = get_dense_collection().query(
-            query_texts=[query], n_results=self.candidate_limit
+        collection = get_dense_collection()
+        # Clamp to the collection size: asking Chroma for more results than it holds
+        # logs a warning on every query.
+        result = collection.query(
+            query_texts=[query],
+            n_results=min(self.candidate_limit, collection.count()),
         )
         return result["ids"][0]
 
@@ -52,7 +56,7 @@ class HybridRetriever(BaseRetriever):
     @staticmethod
     def _rrf(rankings: list[list[str]], weights: list[float]) -> list[str]:
         scores: dict[str, float] = {}
-        for ranking, weight in zip(rankings, weights):
+        for ranking, weight in zip(rankings, weights, strict=True):
             for rank, doc_id in enumerate(ranking):
                 scores[doc_id] = scores.get(doc_id, 0.0) + weight / (
                     config.RRF_K + rank + 1

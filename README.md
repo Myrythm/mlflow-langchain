@@ -22,7 +22,7 @@ A customer-support **RAG** agent (LangChain + OpenAI) with **hybrid retrieval** 
 
 - **Agent:** LangChain retriever → support-agent prompt → `gpt-4o-mini`, traced via
   `mlflow.langchain.autolog()`.
-- **Eval:** `mlflow.genai.evaluate()` over a **hand-written set of 14 grounded questions**
+- **Eval:** `mlflow.genai.evaluate()` over a **hand-written set of 16 grounded questions**
   (each with `expected_facts` + the `source_doc` it's grounded in, drawn from the Nimbus
   fact sheet) — Correctness, RelevanceToQuery, RetrievalGroundedness, RetrievalRelevance,
   RetrievalSufficiency, a custom support Guidelines judge, and Safety.
@@ -82,7 +82,10 @@ uv run python run_eval.py 2     # smoke-test
 uv run python run_eval.py       # full eval set (default = hybrid + BM25)
 ```
 
-### Results (default config, 14-question eval set, regenerated 2026-06-30)
+### Results (default config, regenerated 2026-06-30 on the then-14-question eval set)
+
+> The eval set has since grown to 16 questions (2 new `features-overview` questions);
+> re-run `run_eval.py` to refresh these numbers.
 
 Default agent = **hybrid (dense + BM25)**, `k=4`:
 

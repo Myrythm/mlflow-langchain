@@ -3,7 +3,13 @@ from support_rag.eval_dataset import EVAL_DATASET
 
 
 def test_eval_set_size():
-    assert 12 <= len(EVAL_DATASET) <= 15
+    assert 12 <= len(EVAL_DATASET) <= 20
+
+
+def test_every_article_has_at_least_one_eval_question():
+    articles = {p.stem for p in config.KB_DIR.glob("*.md")}
+    covered = {row["expectations"]["source_doc"] for row in EVAL_DATASET}
+    assert covered == articles
 
 
 def test_entry_shape_and_grounding():

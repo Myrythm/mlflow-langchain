@@ -40,6 +40,17 @@ CANDIDATE_LIMIT = 50        # candidates pulled per retriever before fusion / to
 HYBRID_WEIGHTS = (0.7, 0.3)  # (dense, sparse) for hybrid RRF
 RRF_K = 60                  # reciprocal-rank-fusion constant
 
+# --- Generation ---
+MAX_HISTORY_MESSAGES = 8    # chat messages of history passed to the generator
+
+# --- UI / demo ---
+EXAMPLE_QUESTIONS = [
+    "How much does the Pro plan cost per member?",
+    "Does Nimbus support single sign-on?",
+    "How do I connect Slack to Nimbus?",
+    "Which plans include the Timeline view?",
+]
+
 # --- Prompts ---
 SYSTEM_PROMPT = (
     "You are a helpful, polite customer-support assistant. "

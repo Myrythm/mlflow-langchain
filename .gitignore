@@ -14,3 +14,6 @@ mlartifacts/
 
 # Subagent-driven-development scratch
 .superpowers/
+
+# Codebase reviews by Fable
+review.md

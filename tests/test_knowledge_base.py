@@ -28,3 +28,18 @@ def test_parse_frontmatter_without_block_returns_empty_meta():
     meta, body = knowledge_base._parse_frontmatter("# Just a heading\nbody text")
     assert meta == {}
     assert body.startswith("# Just a heading")
+
+
+def test_parse_frontmatter_unterminated_block_is_treated_as_body():
+    text = "---\ntitle: X\nno closing delimiter"
+    meta, body = knowledge_base._parse_frontmatter(text)
+    assert meta == {}
+    assert body == text
+
+
+def test_parse_frontmatter_ignores_lines_without_colon():
+    meta, body = knowledge_base._parse_frontmatter(
+        "---\ntitle: X\njust some junk\n---\nbody"
+    )
+    assert meta == {"title": "X"}
+    assert body == "body"

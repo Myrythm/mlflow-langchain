@@ -125,6 +125,25 @@ EVAL_DATASET = [
         },
     },
     {
+        "inputs": {"question": "Which plans include the Timeline view?"},
+        "expectations": {
+            "expected_facts": [
+                "Timeline view is available on the Pro, Business, and Enterprise plans"
+            ],
+            "source_doc": "features-overview",
+        },
+    },
+    {
+        "inputs": {"question": "How many boards can I create on the Free plan?"},
+        "expectations": {
+            "expected_facts": [
+                "the Free plan supports 2 boards",
+                "paid plans (Pro, Business, Enterprise) support unlimited boards",
+            ],
+            "source_doc": "features-overview",
+        },
+    },
+    {
         "inputs": {"question": "My notifications aren't coming through. What should I do?"},
         "expectations": {
             "expected_facts": [

@@ -8,15 +8,9 @@ http://127.0.0.1:5000.
 
 import sys
 
+from support_rag.config import EXAMPLE_QUESTIONS
 from support_rag.generation import get_default_answer
 from support_rag.tracing import setup_tracing
-
-# In-domain questions for the Nimbus support KB.
-SAMPLE_QUESTIONS = [
-    "How much does the Pro plan cost per member?",
-    "Does Nimbus support single sign-on?",
-    "How do I connect Slack to Nimbus?",
-]
 
 
 def main() -> None:
@@ -26,7 +20,7 @@ def main() -> None:
         sys.stdout.reconfigure(encoding="utf-8")
     setup_tracing()
     answer = get_default_answer()
-    for question in SAMPLE_QUESTIONS:
+    for question in EXAMPLE_QUESTIONS:
         print(f"\nQ: {question}")
         print(f"A: {answer(question)}")
 

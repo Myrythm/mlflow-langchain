@@ -7,11 +7,11 @@ Each config runs as its own MLflow run (tagged `retrieval_config`); results prin
 by side.
 """
 
-import sys
+import argparse
 
 import mlflow
 
-from support_rag.config import EXPERIMENT
+from support_rag.config import EXPERIMENT, TRACKING_URI
 from support_rag.evaluation import compare_configs
 from support_rag.retrieval import HybridRetriever
 from support_rag.tracing import setup_tracing
@@ -61,9 +61,21 @@ def main(limit: int | None = None) -> None:
             if run_id:
                 print(
                     f"  {name}: "
-                    f"http://127.0.0.1:5000/#/experiments/{exp.experiment_id}/runs/{run_id}"
+                    f"{TRACKING_URI}/#/experiments/{exp.experiment_id}/runs/{run_id}"
                 )
 
 
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument(
+        "limit",
+        nargs="?",
+        type=int,
+        default=None,
+        help="evaluate only the first N questions per config (default: full eval set)",
+    )
+    return parser.parse_args(argv)
+
+
 if __name__ == "__main__":
-    main(int(sys.argv[1]) if len(sys.argv) > 1 else None)
+    main(parse_args().limit)

@@ -7,9 +7,10 @@ and cached to disk. Fusion lives in `retrieval.py`.
 """
 
 import functools
-import pickle
+import json
 
 import chromadb
+from chromadb.errors import NotFoundError
 from chromadb.utils.embedding_functions import OpenAIEmbeddingFunction
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -104,8 +105,8 @@ def get_dense_collection(rebuild: bool = False):
     if rebuild:
         try:
             client.delete_collection(config.DENSE_COLLECTION)
-        except Exception:
-            pass
+        except NotFoundError:
+            pass  # nothing to delete on a first build
 
     if config.DENSE_COLLECTION in {c.name for c in client.list_collections()}:
         return client.get_collection(
@@ -145,17 +146,29 @@ def _get_sparse_model(model: str):
 
 
 def _sparse_cache_path(model: str):
-    return config.DATA_DIR / f"sparse_{model}.pkl"
+    return config.DATA_DIR / f"sparse_{model}.json"
 
 
-def get_sparse_index(model: str) -> list[dict]:
-    """Sparse doc vectors [{id, vec}], cached in memory and on disk."""
+def get_sparse_index(model: str, rebuild: bool = False) -> list[dict]:
+    """Sparse doc vectors [{id, vec}], cached in memory and on disk (JSON).
+
+    `rebuild=True` drops both caches and re-indexes the current corpus — required after
+    editing the knowledge base, or the sparse side keeps serving stale chunk ids.
+    """
+    if rebuild:
+        _sparse_index.pop(model, None)
+        _sparse_cache_path(model).unlink(missing_ok=True)
+
     if model in _sparse_index:
         return _sparse_index[model]
 
     cache = _sparse_cache_path(model)
     if cache.exists():
-        _sparse_index[model] = pickle.loads(cache.read_bytes())
+        # vec is stored as [[index, value], ...] pairs; keys back to int for scoring.
+        _sparse_index[model] = [
+            {"id": e["id"], "vec": {int(i): float(v) for i, v in e["vec"]}}
+            for e in json.loads(cache.read_text(encoding="utf-8"))
+        ]
         return _sparse_index[model]
 
     docs = build_documents()
@@ -163,16 +176,21 @@ def get_sparse_index(model: str) -> list[dict]:
     index = [
         {
             "id": doc.metadata["chunk_id"],
-            "vec": dict(zip(vec.indices.tolist(), vec.values.tolist())),
+            "vec": dict(zip(vec.indices.tolist(), vec.values.tolist(), strict=True)),
         }
-        for doc, vec in zip(docs, vectors)
+        for doc, vec in zip(docs, vectors, strict=True)
     ]
     _sparse_index[model] = index
     cache.parent.mkdir(parents=True, exist_ok=True)
-    cache.write_bytes(pickle.dumps(index))
+    cache.write_text(
+        json.dumps(
+            [{"id": e["id"], "vec": list(e["vec"].items())} for e in index]
+        ),
+        encoding="utf-8",
+    )
     return index
 
 
 def embed_query_sparse(model: str, query: str) -> dict[int, float]:
     vec = next(iter(_get_sparse_model(model).query_embed([query])))
-    return dict(zip(vec.indices.tolist(), vec.values.tolist()))
+    return dict(zip(vec.indices.tolist(), vec.values.tolist(), strict=True))
