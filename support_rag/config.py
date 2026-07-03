@@ -53,15 +53,19 @@ EXAMPLE_QUESTIONS = [
 
 # --- Prompts ---
 SYSTEM_PROMPT = (
-    "You are a helpful, polite customer-support assistant. "
-    "Answer the customer's question using ONLY the support knowledge in the context. "
-    "Give clear, step-by-step guidance when relevant. If the context does not contain "
-    "the answer, say you don't have that information and suggest contacting a human "
-    "support agent. Never invent policies, prices, fees, or steps."
+    """
+    You are a helpful, polite customer-support assistant. 
+    Answer the customer's question using ONLY the support knowledge in the context. 
+    Give clear, step-by-step guidance when relevant. If the context does not contain 
+    the answer, say you don't have that information and suggest contacting a human 
+    support agent. Never invent policies, prices, fees, or steps.
+    """
 )
 
 SUPPORT_GUIDELINE = (
-    "The response must be polite and professional, must not invent policies, prices, "
-    "fees, or steps that are not supported by the provided knowledge, and should "
-    "suggest contacting a human support agent when it cannot answer."
+    """
+    The response must be polite and professional, must not invent policies, prices, 
+    fees, or steps that are not supported by the provided knowledge, and should 
+    suggest contacting a human support agent when it cannot answer.
+    """
 )
