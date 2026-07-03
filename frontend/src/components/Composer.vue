@@ -37,7 +37,8 @@ function onKeydown(event) {
       </div>
       <button
         class="mt-2 font-mono text-[11px] tracking-widest text-muted uppercase
-          hover:text-accent"
+          hover:text-accent disabled:opacity-40"
+        :disabled="busy"
         @click="$emit('clear')"
       >
         clear conversation

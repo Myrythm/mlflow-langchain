@@ -203,6 +203,20 @@ def test_chat_missing_api_key_maps_to_503(client, monkeypatch):
     assert "OPENAI_API_KEY" in resp.json()["detail"]
 
 
+def test_chat_agent_build_failure_maps_like_pre_stream_errors(client, monkeypatch):
+    def broken_get_agent(mode, sparse_model, k):
+        raise RuntimeError(
+            "Missing credentials — set the OPENAI_API_KEY environment variable"
+        )
+
+    monkeypatch.setattr(main, "_get_agent", broken_get_agent)
+
+    resp = client.post("/api/chat", json={"question": "q"})
+
+    assert resp.status_code == 503
+    assert "OPENAI_API_KEY" in resp.json()["detail"]
+
+
 def test_chat_other_pre_stream_errors_map_to_500(client, monkeypatch):
     _install_fake_agent(monkeypatch, error=RuntimeError("chroma exploded"))
 

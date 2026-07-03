@@ -111,8 +111,8 @@ def get_health() -> HealthResponse:
 
 @app.post("/api/chat")
 def chat(req: ChatRequest) -> StreamingResponse:
-    agent = _get_agent(req.mode, req.sparse_model, req.k)
     try:
+        agent = _get_agent(req.mode, req.sparse_model, req.k)
         tokens, docs = agent(req.question, history=[m.model_dump() for m in req.history])
     except Exception as exc:
         logger.exception("Support agent failed to answer %r", req.question)
