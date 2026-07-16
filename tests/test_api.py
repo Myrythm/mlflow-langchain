@@ -1,6 +1,7 @@
 """Tests for the FastAPI wrapper (backend/) — no OpenAI, MLflow, or Chroma needed."""
 
 import json
+import logging
 
 import pytest
 from fastapi.testclient import TestClient
@@ -50,8 +51,10 @@ def test_chat_request_accepts_history_roles():
 
 @pytest.fixture()
 def client(monkeypatch):
-    # Lifespan calls setup_tracing(), which needs a running MLflow server — stub it out.
+    # Lifespan calls setup_tracing() (needs a running MLflow server) and _warm_up()
+    # (needs Chroma/fastembed/OpenAI) — stub both so API tests stay hermetic.
     monkeypatch.setattr(main, "setup_tracing", lambda: None)
+    monkeypatch.setattr(main, "_warm_up", lambda: None)
     with TestClient(main.app) as test_client:
         yield test_client
 
@@ -151,6 +154,27 @@ def test_chat_streams_sources_then_tokens_then_done(client, monkeypatch):
     assert "".join(d["text"] for e, d in events if e == "token") == "ABC"
 
 
+def test_chat_logs_first_token_latency(client, monkeypatch, caplog):
+    _install_fake_agent(monkeypatch, tokens=("A", "B"), docs=[_doc()])
+
+    with caplog.at_level(logging.INFO, logger="backend.main"):
+        _ = client.post("/api/chat", json={"question": "q"}).text  # drain the stream
+
+    matches = [r for r in caplog.records if "first token" in r.getMessage()]
+    assert len(matches) == 1
+    assert matches[0].levelno == logging.INFO
+    assert "ms" in matches[0].getMessage()
+
+
+def test_chat_does_not_log_first_token_when_stream_is_empty(client, monkeypatch):
+    _install_fake_agent(monkeypatch, tokens=(), docs=[_doc()])
+
+    events = _parse_sse(client.post("/api/chat", json={"question": "q"}).text)
+
+    # No token ever arrived, so there is no first-token latency to report.
+    assert [e for e, _ in events] == ["sources", "done"]
+
+
 def test_chat_passes_history_and_settings_to_agent(client, monkeypatch):
     captured = _install_fake_agent(monkeypatch)
     prior = [
@@ -245,6 +269,57 @@ def test_chat_midstream_error_emits_error_event(client, monkeypatch):
     assert [e for e, _ in events] == ["sources", "token", "error"]
     assert "sorry" in events[-1][1]["message"].lower()
     assert "stream died" not in events[-1][1]["message"]
+
+
+def test_lifespan_warms_up_before_serving(monkeypatch):
+    # Warm-up must run at startup so the first real request doesn't pay the
+    # ~11s cold-start (fastembed model + Chroma client + sparse cache load).
+    monkeypatch.setattr(main, "setup_tracing", lambda: None)
+    calls = []
+    monkeypatch.setattr(main, "_warm_up", lambda: calls.append("warm"))
+
+    with TestClient(main.app):
+        pass
+
+    assert calls == ["warm"]
+
+
+def test_warm_up_primes_default_agent_and_retriever(monkeypatch):
+    from support_rag import config
+
+    keys = []
+    monkeypatch.setattr(main, "_get_agent", lambda *k: keys.append(k) or object())
+
+    invoked = []
+
+    class FakeRetriever:
+        def __init__(self, **kw):
+            self.kw = kw
+
+        def invoke(self, question):
+            invoked.append((self.kw, question))
+
+    monkeypatch.setattr(main, "HybridRetriever", FakeRetriever)
+
+    main._warm_up()
+
+    default = (config.DEFAULT_MODE, config.DEFAULT_SPARSE, config.DEFAULT_K)
+    assert keys == [default]
+    assert len(invoked) == 1
+    kw, question = invoked[0]
+    assert (kw["mode"], kw["sparse_model"], kw["k"]) == default
+    assert question  # a non-empty throwaway query forces the load
+
+
+def test_warm_up_swallows_failures(monkeypatch):
+    # A backend that can't warm up (no indexes, missing key) must still start and
+    # surface the error per-request, exactly as before this optimization.
+    def boom(*args, **kwargs):
+        raise RuntimeError("no indexes built")
+
+    monkeypatch.setattr(main, "_get_agent", boom)
+
+    main._warm_up()  # must not raise
 
 
 def test_get_agent_caches_per_configuration(monkeypatch):

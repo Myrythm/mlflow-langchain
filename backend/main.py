@@ -8,6 +8,7 @@ translate results/errors to HTTP. Run from the repo root:
 
 import json
 import logging
+import time
 import urllib.request
 from collections.abc import Callable, Iterator
 from contextlib import asynccontextmanager
@@ -37,6 +38,7 @@ _SNIPPET_CHARS = 160
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     setup_tracing()  # traces every request into the customer-support-rag experiment
+    _warm_up()  # pay the retriever cold-start cost now, not on the first user request
     yield
 
 
@@ -55,6 +57,32 @@ def _mlflow_reachable() -> bool:
             return resp.status == 200
     except OSError:
         return False
+
+
+def _warm_up() -> None:
+    """Pre-load everything the first request would otherwise load lazily.
+
+    The first ``/api/chat`` is ~11s slower than the rest because the default
+    (hybrid) path lazily loads the fastembed BM25 model, opens the Chroma client,
+    and reads the sparse cache — all of which are then memoized process-wide.
+    Building the default agent and running one throwaway retrieval here moves that
+    cost into startup, so the first real request finds the caches already warm.
+
+    Failures are logged and swallowed: a backend that can't warm up (no indexes,
+    missing ``OPENAI_API_KEY``) must still start and surface the error per-request,
+    exactly as it did before this optimization.
+    """
+    try:
+        _get_agent(config.DEFAULT_MODE, config.DEFAULT_SPARSE, config.DEFAULT_K)
+        HybridRetriever(
+            mode=config.DEFAULT_MODE,
+            sparse_model=config.DEFAULT_SPARSE,
+            k=config.DEFAULT_K,
+        ).invoke("warmup")
+    except Exception:
+        logger.exception(
+            "Warm-up failed; the first /api/chat will pay the cold-start cost"
+        )
 
 
 def _get_agent(mode: str, sparse_model: str, k: int) -> Callable:
@@ -111,6 +139,7 @@ def get_health() -> HealthResponse:
 
 @app.post("/api/chat")
 def chat(req: ChatRequest) -> StreamingResponse:
+    start = time.perf_counter()  # measure user-perceived time-to-first-token
     try:
         agent = _get_agent(req.mode, req.sparse_model, req.k)
         tokens, docs = agent(req.question, history=[m.model_dump() for m in req.history])
@@ -129,8 +158,18 @@ def chat(req: ChatRequest) -> StreamingResponse:
 
     def event_stream() -> Iterator[str]:
         yield _sse("sources", json.dumps(sources))
+        first = True
         try:
             for token in tokens:
+                if first:
+                    logger.info(
+                        "first token in %.0f ms (mode=%s sparse=%s k=%d)",
+                        (time.perf_counter() - start) * 1000,
+                        req.mode,
+                        req.sparse_model,
+                        req.k,
+                    )
+                    first = False
                 yield _sse("token", json.dumps({"text": token}))
         except Exception:
             logger.exception("Answer stream failed for %r", req.question)

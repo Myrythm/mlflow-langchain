@@ -119,7 +119,10 @@ def test_rebuild_propagates_unexpected_delete_errors(monkeypatch):
         def create_collection(self, name, embedding_function=None):
             return _FakeCollection()
 
-    monkeypatch.setattr(knowledge_base, "_get_client", lambda: _BrokenClient())
+    # Reset singletons so a fresh DenseIndex is created, then patch its _get_client.
+    knowledge_base._reset_singletons()
+    dense = knowledge_base._get_default_dense()
+    monkeypatch.setattr(dense, "_get_client", lambda: _BrokenClient())
 
     with pytest.raises(RuntimeError, match="connection lost"):
         knowledge_base.get_dense_collection(rebuild=True)
